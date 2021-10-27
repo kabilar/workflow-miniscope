@@ -1,3 +1,5 @@
+# docker-compose -f docker-compose-test.yaml up --build
+
 version: "2.4"
 x-net: &net
   networks:
@@ -17,7 +19,7 @@ services:
       - DJ_HOST=db
       - DJ_USER=root
       - DJ_PASS=simple
-      - IMAGING_ROOT_DATA_DIR=/main/test_data
+      - MINISCOPE_ROOT_DATA_DIR=/main/test_data
       - DATABASE_PREFIX=test_
     command:
       - bash
