@@ -35,6 +35,11 @@ from . import (dj_config, pipeline, subjects_csv, ingest_subjects,
 
 def test_processing_populate(processing, pipeline):
     miniscope = pipeline['miniscope']
-
+    nframes, px_height, px_width = miniscope.RecordingInfo.fetch1('nframes', 'px_height', 'px_width')
 
     assert len(miniscope.RecordingInfo()) == 1
+    assert nframes == 111770
+    assert px_height == 600
+    assert px_width == 600
+
+
