@@ -15,7 +15,8 @@ from workflow_miniscope.paths import get_miniscope_root_data_dir
 
 @pytest.fixture(autouse=True)
 def dj_config():
-    dj.config.load('./dj_local_conf.json')
+    if pathlib.Path('./dj_local_conf.json').exists():
+        dj.config.load('./dj_local_conf.json')
     dj.config['safemode'] = False
     dj.config['custom'] = {
         'database.prefix': (os.environ.get('DATABASE_PREFIX')

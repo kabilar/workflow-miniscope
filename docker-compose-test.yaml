@@ -9,12 +9,12 @@ services:
     <<: *net
     image: datajoint/mysql:5.7
     environment:
-      - MYSQL_ROOT_PASSWORD=simple
+      - MYSQL_ROOT_PASSWORD=simple 
   workflow_miniscope:
     <<: *net
     build:
       context: .
-    image: workflow_miniscope:v0.0.0
+    #image: workflow_miniscope:v0.0.0
     environment:
       - DJ_HOST=db
       - DJ_USER=root
@@ -29,7 +29,7 @@ services:
         pytest -sv --cov-report term-missing --cov=workflow-miniscope -p no:warnings
         tail -f /dev/null
     volumes:
-      - ${TEST_DATA_DIR}:/main/test_data
+      - /Users/davidgodinez/Desktop/data/U24/Miniscope-DAQ-V4:/main/test_data
     depends_on:
       db:
         condition: service_healthy
