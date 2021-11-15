@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../../miniscope/kabilar"
+		},
+		{
+			"path": "../../parameters"
+		},
+		{
+			"path": "../../../miniscope/element-session"
+		},
+		{
+			"path": "../../Phil"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	}
+}

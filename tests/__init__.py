@@ -18,10 +18,10 @@ def dj_config():
     dj.config.load('./dj_local_conf.json')
     dj.config['safemode'] = False
     dj.config['custom'] = {
-        'database.prefix': os.environ.get('DATABASE_PREFIX',
-                                          dj.config['custom']['database.prefix']),
-        'miniscope_root_data_dir': os.environ.get('MINISCOPE_ROOT_DATA_DIR',
-                                                dj.config['custom']['miniscope_root_data_dir'])
+        'database.prefix': (os.environ.get('DATABASE_PREFIX')
+                            or dj.config['custom']['database.prefix']),
+        'miniscope_root_data_dir': (os.environ.get('MINISCOPE_ROOT_DATA_DIR')
+                                    or dj.config['custom']['miniscope_root_data_dir'])
     }
     return
 
@@ -111,16 +111,17 @@ def ingest_sessions(ingest_subjects, sessions_csv):
 def testdata_paths():
     return {
 
-        'miniscope_2d': 'subject1/20200609_171646'
+        'miniscope_daqv4': 'subject1/20200609_171646',
+        'caiman': 'subject1/20200609_171646'
 
     }
 
 
 @pytest.fixture
-def caiman2D_paramset(pipeline):
+def caiman_paramset(pipeline):
     miniscope = pipeline['miniscope']
 
-    params_caiman_2d = {'fnames': None,
+    params_caiman = {'fnames': None,
                         'dims': None,
                         'fr': 30,
                         'decay_time': 0.4,
@@ -311,9 +312,9 @@ def caiman2D_paramset(pipeline):
     # miniscope.ProcessingParamSet.insert_new_params(
     #     'caiman', 1, 'Calcium imaging analysis with'
     #                  ' CaImAn using default CaImAn parameters for 2d planar images',
-    #     params_caiman_2d)
+    #     params_caiman)
 
-    # yield params_caiman_2d
+    # yield params_caiman
 
     # (miniscope.ProcessingParamSet & 'paramset_idx = 1').delete()
 
@@ -532,7 +533,7 @@ def caiman2D_paramset(pipeline):
 
 
 # @pytest.fixture
-# def processing_tasks(pipeline, caiman2D_paramset, caiman3D_paramset, scan_info):
+# def processing_tasks(pipeline, caiman_paramset, caiman3D_paramset, scan_info):
 #     miniscope = pipeline['miniscope']
 #     scan = pipeline['scan']
 #     get_miniscope_root_data_dir = pipeline['get_miniscope_root_data_dir']
@@ -556,7 +557,7 @@ def caiman2D_paramset(pipeline):
 
 
 @pytest.fixture
-def processing(pipeline, ingest_sessions):
+def recording(pipeline, ingest_sessions):
     miniscope = pipeline['miniscope']
     session = pipeline['session']
     session_key = dict(subject='LO012', 
@@ -579,7 +580,7 @@ def processing(pipeline, ingest_sessions):
 
 
 @pytest.fixture
-def curations(processing, pipeline):
+def curations(recording, pipeline):
     miniscope = pipeline['miniscope']
 
 # for key in (miniscope.ProcessingTask - miniscope.Curation).fetch('KEY'):

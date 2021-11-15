@@ -64,7 +64,7 @@ def ingest_sessions(session_csv_path='./user_data/sessions.csv'):
     session.SessionDirectory.insert(session_dir_list)
 
     # print(f'\n---- Insert {len(scan_list)} entry(s) into scan.Scan ----')
-    # scan.Scan.insert(scan_list)
+    # miniscope.RecordingInfo.insert(scan_list)
 
     print('\n---- Successfully completed ingest_sessions ----')
 
