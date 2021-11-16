@@ -1,5 +1,5 @@
 from . import (dj_config, pipeline, subjects_csv, ingest_subjects, sessions_csv, ingest_sessions,
-               testdata_paths, processing, curations)
+               testdata_paths, recording, curations)
 
 
 def test_generate_pipeline(pipeline):
