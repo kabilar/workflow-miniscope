@@ -5,3 +5,4 @@ element-session
 element-miniscope @ git+https://github.com/kabilar/element-miniscope.git
 element-data-loader @ git+https://github.com/datajoint/element-data-loader.git
 djarchive-client @ git+https://github.com/datajoint/djarchive-client.git
+cv2
