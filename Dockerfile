@@ -4,7 +4,7 @@ USER root
 RUN apt-get install git -y
 
 USER anaconda
-WORKDIR /mnt2
+WORKDIR /mnt3
 WORKDIR /mnt4
 WORKDIR /main/workflow-miniscope
 RUN git clone https://github.com/davidgodinez/workflow-miniscope.git .
