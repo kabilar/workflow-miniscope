@@ -9,5 +9,6 @@ WORKDIR /mnt2
 WORKDIR /main/workflow-miniscope
 RUN git clone https://github.com/davidgodinez/workflow-miniscope.git .
 RUN pip3 install .
+RUN conda install -c conda-forge opencv
 RUN pip3 install -r requirements_test.txt
 
