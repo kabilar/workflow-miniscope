@@ -5,7 +5,7 @@ RUN apt-get install git -y
 
 USER anaconda
 WORKDIR /mnt3
-WORKDIR /mnt2
+WORKDIR /mnt3
 WORKDIR /main/workflow-miniscope
 RUN git clone https://github.com/davidgodinez/workflow-miniscope.git .
 RUN pip3 install .
