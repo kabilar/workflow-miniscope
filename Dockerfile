@@ -5,10 +5,9 @@ RUN apt-get install git -y
 
 USER anaconda
 WORKDIR /mnt3
-WORKDIR /mnt3
+WORKDIR /mnt4
 WORKDIR /main/workflow-miniscope
 RUN git clone https://github.com/davidgodinez/workflow-miniscope.git .
 RUN pip3 install .
-RUN conda install -c conda-forge opencv
 RUN pip3 install -r requirements_test.txt
 
