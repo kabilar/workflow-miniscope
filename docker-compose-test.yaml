@@ -28,6 +28,7 @@ services:
         echo "------ INTEGRATION TESTS ------"
         pytest tests/test_pipeline_generation.py
         pytest tests/test_ingest.py
+        pytest tests/tests_populate.py
         tail -f /dev/null
     volumes:
       - /Users/davidgodinez/Desktop/data/U24/Miniscope-DAQ-V4:/main/test_data
