@@ -96,7 +96,7 @@ def sessions_csv():
 @pytest.fixture
 def ingest_sessions(ingest_subjects, sessions_csv):
     from workflow_miniscope.ingest import ingest_sessions
-    from workflow_miniscope.pipeline import Equipment, session
+    from workflow_miniscope.pipeline import lab, session
 
     _, sessions_csv_path = sessions_csv
     ingest_sessions(sessions_csv_path)
@@ -104,6 +104,8 @@ def ingest_sessions(ingest_subjects, sessions_csv):
                    session_datetime='2021-08-25 23:45:44')
 
     session.Session.insert1(session_key)
+
+    lab.Equipment.insert1('UCLA Miniscope')
 
 
     return
