@@ -566,9 +566,9 @@ def recording(pipeline, ingest_sessions):
     session_key = dict(subject='LO012', 
                    session_datetime='2021-08-25 23:45:44')
 
-    equipment = pipeline['Equipment']
+    lab = pipeline['lab']
     
-    equipment.insert1('UCLA Miniscope') 
+    lab.Equipment.insert1('UCLA Miniscope') 
 
     recording_key = dict(session_key,
                      recording_id=0)
