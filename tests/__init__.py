@@ -1,6 +1,7 @@
 # run tests: pytest -sv --cov-report term-missing --cov=workflow-miniscope -p no:warnings
 
 import os
+from attr.setters import pipe
 import pytest
 import pandas as pd
 import pathlib
@@ -10,6 +11,7 @@ import numpy as np
 
 
 from workflow_miniscope.paths import get_miniscope_root_data_dir
+from workflow_miniscope.pipeline import Equipment
 
 
 
@@ -563,6 +565,10 @@ def recording(pipeline, ingest_sessions):
     session = pipeline['session']
     session_key = dict(subject='LO012', 
                    session_datetime='2021-08-25 23:45:44')
+
+    equipment = pipeline['Equipment']
+    
+    equipment.insert1('UCLA Miniscope') 
 
     recording_key = dict(session_key,
                      recording_id=0)

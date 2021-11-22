@@ -14,7 +14,7 @@ services:
     <<: *net
     build:
       context: .
-    #image: workflow_miniscope:v0.0.0
+    image: workflow_miniscope:v0.0.0
     environment:
       - DJ_HOST=db
       - DJ_USER=root
@@ -26,12 +26,10 @@ services:
       - -c
       - |
         echo "------ INTEGRATION TESTS ------"
-        pytest tests/test_pipeline_generation.py
-        pytest tests/test_ingest.py
-        pytest tests/tests_populate.py
+        pytest tests/test_populate.py
         tail -f /dev/null
     volumes:
-      - /Users/davidgodinez/Desktop/data/U24/Miniscope-DAQ-V4:/main/test_data
+      - ${TEST_DATA_DIR}:/main/test_data
     depends_on:
       db:
         condition: service_healthy
