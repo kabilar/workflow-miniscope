@@ -2,6 +2,7 @@ import datajoint as dj
 from element_lab import lab
 from element_animal import subject
 from element_session import session_with_datetime as session
+from element_trial import trial, event
 from element_miniscope import miniscope
 
 from element_lab.lab import Source, Lab, Protocol, User, Location, Project
@@ -16,6 +17,9 @@ if 'custom' not in dj.config:
 
 db_prefix = dj.config['custom'].get('database.prefix', '')
 
+__all__ = ['lab', 'subject', 'session', 'trial', 'event', 'miniscope', 'Source', 'Lab',
+           'Protocol', 'User', 'Location', 'Project', 'Subject', 'Session',
+           'get_miniscope_root_data_dir']
 
 # Activate `lab`, `subject`, `session` schema ------------------------------------------
 
