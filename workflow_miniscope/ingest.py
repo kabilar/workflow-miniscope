@@ -1,122 +1,91 @@
 import pathlib
 import csv
 from datetime import datetime
-from element_interface.utils import ingest_csv_to_table
+import json
 
-from .pipeline import subject, session, event, trial, Equipment
-from .pipeline import miniscope as scan # NEEDS FIXING?
+from .pipeline import subject, session, Equipment, miniscope
 from .paths import get_miniscope_root_data_dir
+from element_interface.utils import find_full_path, recursive_search
+
+def ingest_subjects(subject_csv_path='./user_data/subjects.csv'):
+    print('\n-------------- Insert new "Subject" --------------')
+    with open(subject_csv_path, newline= '') as f:
+        input_subjects = list(csv.DictReader(f, delimiter=','))
+
+    print(f'\n---- Insert {len(input_subjects)} entry(s) into subject.Subject ----')
+    subject.Subject.insert(input_subjects, skip_duplicates=True)
+
+    print('\n---- Successfully completed ingest_subjects ----')
 
 
-def ingest_subjects(subject_csv_path='./user_data/subjects.csv',
-                    skip_duplicates=True, verbose=True):
-    """
-    Ingest subjects listed in the subject column of ./user_data/subjects.csv
-    """
-    csvs = [subject_csv_path]
-    tables = [subject.Subject()]
+def ingest_sessions(session_csv_path='./user_data/sessions.csv'):
 
-    ingest_csv_to_table(csvs, tables, skip_duplicates=skip_duplicates, verbose=verbose)
-
-
-def ingest_sessions(session_csv_path='./user_data/sessions.csv', verbose=True,
-                    skip_duplicates=False):
-    root_data_dir = get_miniscope_root_data_dir()
-
-    # ---------- Insert new "Session" and "Scan" ---------
+    print('\n---- Insert new `Session` and `Recording` ----')
     with open(session_csv_path, newline='') as f:
         input_sessions = list(csv.DictReader(f, delimiter=','))
 
-    # Folder structure: root / subject / session / .avi (raw)
-    session_list, session_dir_list, scan_list, scanner_list = [], [], [], []
+    session_list, session_dir_list, recording_list, hardware_list = [], [], [], []
 
-    for sess in input_sessions:
-        sess_dir = pathlib.Path(sess['session_dir'])
+    for single_session in input_sessions:
+        acquisition_software = single_session['acquisition_software']
+        if acquisition_software not in ['Miniscope-DAQ-V3', 'Miniscope-DAQ-V4']:
+            raise NotImplementedError(f'Not implemented for acquisition software of '
+                                      f'type {acquisition_software}.')
 
-        # Search for Miniscope-DAQ-V3 files (in that order)
-        for scan_pattern, scan_type, glob_func in zip(['ms*.avi'],
-                                                      ['Miniscope-DAQ-V3'],
-                                                      [sess_dir.glob]):
-            scan_filepaths = [fp.as_posix() for fp in glob_func(scan_pattern)]
-            if len(scan_filepaths):
-                acq_software = scan_type
+        # Folder structure: root / subject / session / .avi (raw)
+        session_dir = pathlib.Path(single_session['session_dir'])
+        session_path = find_full_path(get_miniscope_root_data_dir(),
+                                      session_dir)
+        recording_filepaths = [file_path.as_posix() for file_path 
+                                            in session_path.glob('*.avi')]
+        if not recording_filepaths:
+            raise FileNotFoundError(f'No .avi files found in '
+                                    f'{session_path}')
+
+        # Read Miniscope DAQ *.json file
+        for metadata_filepath in session_path.glob('metaData.json'):
+            try:
+                recording_time = datetime.fromtimestamp(
+                                                    metadata_filepath.stat().st_ctime)
+                with open(metadata_filepath) as json_file:
+                    recording_metadata = json.load(json_file)
+                acquisition_hardware = recursive_search('deviceType', 
+                                                        recording_metadata)
                 break
-        else:
-            # raise FileNotFoundError('Unable to identify scan files from the supported'
-            #                         + ' acquisition softwares (Miniscope-DAQ-V3) at: '
-            #                         + {sess_dir})
-            pass
+            except OSError:
+                print(f'Could not find `deviceType` in Miniscope-DAQ json: '
+                      f'{metadata_filepath}')
+                continue
 
-        if acq_software == 'Miniscope-DAQ-V3':
-            daq_v3_fp = pathlib.Path(scan_filepaths[0])
-            recording_time = datetime.fromtimestamp(daq_v3_fp.stat().st_ctime)
-            scanner = 'Miniscope-DAQ-V3'
-        else:
-            # raise NotImplementedError('Processing scan from acquisition software of '
-            #                           + f'type {acq_software} is not yet implemented')
-            pass
-
-        session_key = {'subject': sess['subject'], 'session_datetime': recording_time}
+        session_key = dict(subject=single_session['subject'], 
+                           session_datetime=recording_time)
         if session_key not in session.Session():
-            scanner_list.append({'scanner': scanner})
+            hardware_list.append(dict(acquisition_hardware=acquisition_hardware))
+
             session_list.append(session_key)
-            scan_list.append({**session_key, 'scan_id': 0, 'scanner': scanner,
-                              'acq_software': acq_software})
 
-            session_dir_list.append({**session_key,
-                                     'session_dir': sess_dir.relative_to(root_data_dir
-                                                                         ).as_posix()})
+            session_dir_list.append(dict(**session_key, 
+                                         session_dir=session_dir.as_posix()))
 
-    new_equip = len(set(val for dic in scanner_list for val in dic.values()))
-    # if verbose:
-    #     print(f'\n---- Insert {new_equip} entry(s) into experiment.Equipment ----')
-    # Equipment.insert(scanner_list, skip_duplicates=True)
+            recording_list.append(dict(**session_key, 
+                                   recording_id=0, # Assumes one recording per session
+                                   acquisition_hardware=acquisition_hardware, 
+                                   acquisition_software=acquisition_software,
+                                   recording_directory=session_dir.as_posix()))
 
-    if verbose:
-        print(f'\n---- Insert {len(session_list)} entry(s) into session.Session ----')
+    print(f'\n---- Insert {len(set(val for dic in hardware_list for val in dic.values()))} entry(s) into lab.Equipment ----')
+    Equipment.insert(hardware_list, skip_duplicates=True)
+
+    print(f'\n---- Insert {len(session_list)} entry(s) into session.Session ----')
     session.Session.insert(session_list)
     session.SessionDirectory.insert(session_dir_list)
 
-    # if verbose:
-    #     print(f'\n---- Insert {len(scan_list)} entry(s) into scan.Scan ----')
-    # scan.Scan.insert(scan_list)
+    print(f'\n---- Insert {len(recording_list)} entry(s) into miniscope.Recording ----')
+    miniscope.Recording.insert(recording_list)
 
-    if verbose:
-        print('\n---- Successfully completed ingest_sessions ----')
-
-
-def ingest_events(recording_csv_path='./user_data/behavior_recordings.csv',
-                  block_csv_path='./user_data/blocks.csv',
-                  trial_csv_path='./user_data/trials.csv',
-                  event_csv_path='./user_data/events.csv',
-                  skip_duplicates=True, verbose=True):
-    csvs = [recording_csv_path, recording_csv_path,
-            block_csv_path, block_csv_path,
-            trial_csv_path, trial_csv_path, trial_csv_path,
-            trial_csv_path,
-            event_csv_path, event_csv_path, event_csv_path]
-    tables = [event.BehaviorRecording(), event.BehaviorRecording.File(),
-              trial.Block(), trial.Block.Attribute(),
-              trial.TrialType(), trial.Trial(), trial.Trial.Attribute(),
-              trial.BlockTrial(),
-              event.EventType(), event.Event(), trial.TrialEvent()]
-
-    # Allow direct insert required bc element-trial has Imported that should be Manual
-    ingest_csv_to_table(csvs, tables, skip_duplicates=skip_duplicates, verbose=verbose)
-                        # allow_direct_insert=True)
-
-
-def ingest_alignment(alignment_csv_path='./user_data/alignments.csv',
-                     skip_duplicates=True, verbose=True):
-
-    csvs = [alignment_csv_path]
-    tables = [event.AlignmentEvent()]
-
-    ingest_csv_to_table(csvs, tables, skip_duplicates=skip_duplicates, verbose=verbose)
+    print('\n---- Successfully completed ingest_sessions ----')
 
 
 if __name__ == '__main__':
     ingest_subjects()
     ingest_sessions()
-    ingest_events()
-    ingest_alignment()
