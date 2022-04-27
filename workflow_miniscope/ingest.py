@@ -1,38 +1,11 @@
 import pathlib
 import csv
 from datetime import datetime
+from element_interface.utils import ingest_csv_to_table
 
-from .pipeline import subject, scan, session, event, trial, Equipment
-from .paths import get_imaging_root_data_dir
-
-
-def ingest_general(csvs, tables, skip_duplicates=True, verbose=True,
-                   allow_direct_insert=False):
-    """
-    Inserts data from a series of csvs into their corresponding table:
-        e.g., ingest_general(['./lab_data.csv', './proj_data.csv'],
-                                 [lab.Lab(),lab.Project()]
-    ingest_general(csvs, tables, skip_duplicates=True, verbose=True,
-                   allow_direct_insert=False)
-        :param csvs: list of relative paths to CSV files.  CSV are delimited by commas.
-        :param tables: list of datajoint tables with ()
-        :param verbose: print number inserted (i.e., table length change)
-        :param skip_duplicates: skip items that are either (a) duplicates within the csv
-                                or (b) already exist in the corresponding table
-        :param allow_direct_insert: Permit insertion directly into calculated tables
-    """
-    for csv_filepath, table in zip(csvs, tables):
-        with open(csv_filepath, newline='') as f:
-            data = list(csv.DictReader(f, delimiter=','))
-        if verbose:
-            prev_len = len(table)
-        table.insert(data, skip_duplicates=skip_duplicates,
-                     # Ignore extra fields because some CSVs feed multiple tables
-                     ignore_extra_fields=True, allow_direct_insert=allow_direct_insert)
-        if verbose:
-            insert_len = len(table) - prev_len     # report length change
-            print(f'\n---- Inserting {insert_len} entry(s) '
-                  + f'into {table.table_name} ----')
+from .pipeline import subject, session, event, trial, Equipment
+from .pipeline import miniscope as scan # NEEDS FIXING?
+from .paths import get_miniscope_root_data_dir
 
 
 def ingest_subjects(subject_csv_path='./user_data/subjects.csv',
@@ -43,12 +16,12 @@ def ingest_subjects(subject_csv_path='./user_data/subjects.csv',
     csvs = [subject_csv_path]
     tables = [subject.Subject()]
 
-    ingest_general(csvs, tables, skip_duplicates=skip_duplicates, verbose=verbose)
+    ingest_csv_to_table(csvs, tables, skip_duplicates=skip_duplicates, verbose=verbose)
 
 
 def ingest_sessions(session_csv_path='./user_data/sessions.csv', verbose=True,
                     skip_duplicates=False):
-    root_data_dir = get_imaging_root_data_dir()
+    root_data_dir = get_miniscope_root_data_dir()
 
     # ---------- Insert new "Session" and "Scan" ---------
     with open(session_csv_path, newline='') as f:
@@ -69,17 +42,19 @@ def ingest_sessions(session_csv_path='./user_data/sessions.csv', verbose=True,
                 acq_software = scan_type
                 break
         else:
-            raise FileNotFoundError('Unable to identify scan files from the supported'
-                                    + ' acquisition softwares (Miniscope-DAQ-V3) at: '
-                                    + {sess_dir})
+            # raise FileNotFoundError('Unable to identify scan files from the supported'
+            #                         + ' acquisition softwares (Miniscope-DAQ-V3) at: '
+            #                         + {sess_dir})
+            pass
 
         if acq_software == 'Miniscope-DAQ-V3':
             daq_v3_fp = pathlib.Path(scan_filepaths[0])
             recording_time = datetime.fromtimestamp(daq_v3_fp.stat().st_ctime)
             scanner = 'Miniscope-DAQ-V3'
         else:
-            raise NotImplementedError('Processing scan from acquisition software of '
-                                      + f'type {acq_software} is not yet implemented')
+            # raise NotImplementedError('Processing scan from acquisition software of '
+            #                           + f'type {acq_software} is not yet implemented')
+            pass
 
         session_key = {'subject': sess['subject'], 'session_datetime': recording_time}
         if session_key not in session.Session():
@@ -93,18 +68,18 @@ def ingest_sessions(session_csv_path='./user_data/sessions.csv', verbose=True,
                                                                          ).as_posix()})
 
     new_equip = len(set(val for dic in scanner_list for val in dic.values()))
-    if verbose:
-        print(f'\n---- Insert {new_equip} entry(s) into experiment.Equipment ----')
-    Equipment.insert(scanner_list, skip_duplicates=True)
+    # if verbose:
+    #     print(f'\n---- Insert {new_equip} entry(s) into experiment.Equipment ----')
+    # Equipment.insert(scanner_list, skip_duplicates=True)
 
     if verbose:
         print(f'\n---- Insert {len(session_list)} entry(s) into session.Session ----')
     session.Session.insert(session_list)
     session.SessionDirectory.insert(session_dir_list)
 
-    if verbose:
-        print(f'\n---- Insert {len(scan_list)} entry(s) into scan.Scan ----')
-    scan.Scan.insert(scan_list)
+    # if verbose:
+    #     print(f'\n---- Insert {len(scan_list)} entry(s) into scan.Scan ----')
+    # scan.Scan.insert(scan_list)
 
     if verbose:
         print('\n---- Successfully completed ingest_sessions ----')
@@ -127,8 +102,8 @@ def ingest_events(recording_csv_path='./user_data/behavior_recordings.csv',
               event.EventType(), event.Event(), trial.TrialEvent()]
 
     # Allow direct insert required bc element-trial has Imported that should be Manual
-    ingest_general(csvs, tables, skip_duplicates=skip_duplicates, verbose=verbose,
-                   allow_direct_insert=True)
+    ingest_csv_to_table(csvs, tables, skip_duplicates=skip_duplicates, verbose=verbose)
+                        # allow_direct_insert=True)
 
 
 def ingest_alignment(alignment_csv_path='./user_data/alignments.csv',
@@ -137,7 +112,7 @@ def ingest_alignment(alignment_csv_path='./user_data/alignments.csv',
     csvs = [alignment_csv_path]
     tables = [event.AlignmentEvent()]
 
-    ingest_general(csvs, tables, skip_duplicates=skip_duplicates, verbose=verbose)
+    ingest_csv_to_table(csvs, tables, skip_duplicates=skip_duplicates, verbose=verbose)
 
 
 if __name__ == '__main__':
